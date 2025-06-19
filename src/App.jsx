@@ -10,6 +10,17 @@ export default function CirclefolkWaitlist() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [showAlreadyOnWaitlist, setShowAlreadyOnWaitlist] = useState(false);
+  const [count, setCount] = useState(null);
+
+  useEffect(() => {
+    fetch('/.netlify/functions/waitlist-count')
+      .then((res) => res.json())
+      .then((data) => setCount(data.count))
+      .catch((err) => {
+        console.error('Failed to fetch count:', err);
+      });
+  }, []);
 
   const handleSubmit = async () => {
     const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -30,14 +41,19 @@ export default function CirclefolkWaitlist() {
         body: JSON.stringify({ email })
       });
 
+      const data = await res.json();
+
       if (res.ok) {
         setShowCelebration(true);
         setEmail('');
         setTimeout(() => {
           window.location.href = 'https://handles.circlefolk.com';
         }, 6000);
+      } else if (res.status === 409) {
+        // Handle duplicate email
+        toast.error('This email is already on the waitlist!');
       } else {
-        toast.error('Something went wrong. Please try again.');
+        toast.error(data.error || 'Something went wrong. Please try again.');
       }
     } catch (error) {
       console.error('Error:', error);
@@ -159,9 +175,9 @@ export default function CirclefolkWaitlist() {
           Join the revolution of hyperlocal social networking where your neighborhood becomes your network
         </p>
 
-        {/* Only show form if not submitted */}
-        {!submitted && (
-          <div className="w-full max-w-md mb-12">
+        {/* Only show form if not submitted and not showing already on waitlist */}
+        {!submitted && !showAlreadyOnWaitlist && (
+          <div className="w-full max-w-md mb-6">
             <div className="bg-white/80 backdrop-blur-lg border border-[#c76c2c26] rounded-2xl p-8">
               <h3 className="font-bold text-[#c76c2c] text-xl mb-4 text-center">Get notified on app release</h3>
               <input
@@ -180,6 +196,85 @@ export default function CirclefolkWaitlist() {
             </div>
           </div>
         )}
+
+        {/* Already on waitlist question */}
+        {!submitted && !showAlreadyOnWaitlist && (
+          <div className="mb-12">
+            <button
+              onClick={() => setShowAlreadyOnWaitlist(true)}
+              className="text-[#c76c2c] underline hover:text-[#e8944a] transition-colors duration-300 text-lg"
+            >
+              Already on the waitlist?
+            </button>
+          </div>
+        )}
+
+        {/* Show two boxes when "Already on waitlist" is clicked */}
+        <AnimatePresence>
+          {showAlreadyOnWaitlist && (
+            <motion.div
+              className="w-full max-w-2xl mb-12"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5 }}
+            >
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Google Sheets Box */}
+                <motion.div
+                  className="link-card group relative bg-white/80 backdrop-blur-lg border border-[#c76c2c26] rounded-2xl p-8 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-center overflow-hidden"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1, duration: 0.5 }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#34a853]/5 to-[#0f9d58]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="relative z-10">
+                    <div className="text-5xl font-extrabold text-[#c76c2c] mb-4">
+                      {count !== null ? count.toLocaleString() : '--'}
+                    </div>
+                    <h3 className="font-bold text-[#c76c2c] text-xl mb-2">You're not alone!</h3>
+                    <p className="text-[#c76c2c] opacity-70">
+                       Count of people that have already joined the waitlist.
+                    </p>
+                  </div>
+                </motion.div>
+
+                {/* Handles Box */}
+                <motion.a
+                  href="https://handles.circlefolk.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="link-card group relative bg-white/80 backdrop-blur-lg border border-[#c76c2c26] rounded-2xl p-8 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-center overflow-hidden"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2, duration: 0.5 }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#c76c2c]/5 to-[#e8944a]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="relative z-10 flex flex-col items-center">
+                    <img
+                      src={dummyImage}
+                      alt="Circlefolk Logo"
+                      className="w-16 h-16 rounded-full object-cover mb-4 shadow-md"
+                    />
+                    <h3 className="font-bold text-[#c76c2c] text-xl mb-2">Check Circlefolk's Handles</h3>
+                    <p className="text-[#c76c2c] opacity-70">Explore our handle system</p>
+                  </div>
+                </motion.a>
+              </div>
+
+              {/* Back button */}
+              <motion.button
+                onClick={() => setShowAlreadyOnWaitlist(false)}
+                className="mt-6 text-[#c76c2c] underline hover:text-[#e8944a] transition-colors duration-300"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+              >
+                Want enroll for the waitlist ?
+              </motion.button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <p className="text-[#c76c2c] text-xs opacity-60">© 2024 Circlefolk. Connecting communities worldwide.</p>
       </div>
