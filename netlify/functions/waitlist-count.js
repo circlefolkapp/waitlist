@@ -20,7 +20,7 @@ exports.handler = async () => {
     });
 
     const rows = res.data.values || [];
-    const count = rows.length - 1; // subtract header row if you have one
+    const count = rows.length; // subtract header row if you have one
 
     return {
       statusCode: 200,
