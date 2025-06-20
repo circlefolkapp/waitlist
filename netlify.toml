@@ -1,0 +1,5 @@
+[[redirects]]
+  from = "https://circlefolk.netlify.app/*"
+  to = "https://circlefolk.com/:splat"
+  status = 301
+  force = true
